@@ -7,7 +7,7 @@ export interface Card {
     rank: Rank,
     suit: Suit,
     value: number,
-    cardPath: string
+    cardPicturePath: string
 }
 
 export interface Hand {
@@ -20,4 +20,11 @@ export interface DealerHand {
     cards: Card[],
     isHoleCardHidden: boolean,
     status: HandStatus
+}
+
+export interface Game {
+    id: number,
+    player: Hand[],
+    dealer: DealerHand,
+    state: "player-turn" | "dealer-turn" | "round-over"
 }
