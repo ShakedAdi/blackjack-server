@@ -7,7 +7,6 @@ export interface Card {
     rank: Rank,
     suit: Suit,
     value: number,
-    cardPicturePath: string
 }
 
 export interface Hand {
