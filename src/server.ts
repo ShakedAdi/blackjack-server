@@ -1,5 +1,7 @@
 import express, {type Application, type Request, type Response } from 'express';
 import cors from 'cors';
+import type { Game } from './types.js';
+import { randomUUID } from 'node:crypto';
 
 const app: Application = express();
 const PORT: number = 42069;
@@ -7,8 +9,16 @@ const PORT: number = 42069;
 app.use(express.json());
 app.use(cors());
 
+// health check endpoint
 app.get('/status', (req: Request, res: Response) => {
     res.status(200).json({isRunning: true});
+});
+
+// game logic
+const games = new Map<string, Game>();
+
+app.post('/new-game', (req: Request, res: Response) => {
+    const gameId = randomUUID();
 });
 
 app.listen(PORT, () => {
