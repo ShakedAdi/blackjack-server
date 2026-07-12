@@ -10,7 +10,6 @@ export interface Card {
 }
 
 export interface Hand {
-    readonly id: number,
     cards: Card[],
     status: HandStatus
 }
@@ -22,8 +21,7 @@ export interface DealerHand {
 }
 
 export interface Game {
-    readonly id: number,
     player: Hand[],
-    dealer: DealerHand,
+    dealer: DealerHand | undefined,
     state: "player-turn" | "dealer-turn" | "round-over"
 }
