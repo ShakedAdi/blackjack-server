@@ -16,6 +16,7 @@ app.use(cors());
 const spec = parse(readFileSync(new URL('../openapi.yaml', import.meta.url), 'utf8'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
 
+// health check endpoint
 app.get('/status', (req: Request, res: Response) => {
     res.status(200).json({isRunning: true});
 });
@@ -33,7 +34,9 @@ app.post('/new-game', (req: Request, res: Response) => {
     games.set(gameId, game);
     res.status(201).json({gameId});
 });
+// === game logic ===
 
+// debug endpoint
 app.get('/all-games', (req: Request, res: Response) => {
     res.status(200).json(Object.fromEntries(games));
 });
