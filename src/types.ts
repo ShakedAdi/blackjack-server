@@ -3,7 +3,6 @@ type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "
 type HandStatus = "playing" | "stood" | "busted" | "blackjack";
 
 export interface Card {
-    readonly id: number,
     readonly rank: Rank,
     readonly suit: Suit,
     readonly value: number,
