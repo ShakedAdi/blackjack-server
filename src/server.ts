@@ -2,6 +2,10 @@ import express, {type Application, type Request, type Response } from 'express';
 import cors from 'cors';
 import type { Game } from './types.js';
 import { randomUUID } from 'node:crypto';
+import swaggerUi from 'swagger-ui-express';
+import { readFileSync } from 'node:fs';
+import { parse } from 'yaml';
+
 
 const app: Application = express();
 const PORT: number = 42069;
@@ -9,7 +13,9 @@ const PORT: number = 42069;
 app.use(express.json());
 app.use(cors());
 
-// health check endpoint
+const spec = parse(readFileSync(new URL('../openapi.yaml', import.meta.url), 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+
 app.get('/status', (req: Request, res: Response) => {
     res.status(200).json({isRunning: true});
 });
@@ -28,7 +34,6 @@ app.post('/new-game', (req: Request, res: Response) => {
     res.status(201).json({gameId});
 });
 
-// debug endpoint
 app.get('/all-games', (req: Request, res: Response) => {
     res.status(200).json(Object.fromEntries(games));
 });
