@@ -1,11 +1,13 @@
-import type { Card, Rank, Suit } from "./types.js";
+import type { Card, Game, Rank, Suit } from "./types.js";
 
+// returns the card value as a number
 function cardValue(rank: Rank): number {
     if (!isNaN(Number(rank)) && isFinite(Number(rank))) return Number(rank);
     if (rank === "A") return 11;
     return 10;
 }
 
+// generates an unshuffled deck containing all 52 cards
 export function generateDeck(): Card[] {
     let cards: Card[] = [];
     const ranks: Rank[] = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
@@ -21,6 +23,7 @@ export function generateDeck(): Card[] {
     return cards;
 }
 
+// returns a shuffled copy of the given Card array
 export function shuffleDeck(deck: Card[]): Card[] {
   const shuffled = [...deck]; 
   
@@ -30,4 +33,21 @@ export function shuffleDeck(deck: Card[]): Card[] {
   }
   
   return shuffled;
+}
+
+// initiliaze the game object with the shuffled deck, player's hand and the dealers hand
+export function initializeGame(): Game {
+    const game: Game = {
+        deck: shuffleDeck(generateDeck()),
+        player: [],
+        dealer: undefined,
+        state: "player-turn"
+    }
+    
+    game.player.push({cards: [game.deck.pop()!], status: "playing"}); // handing the player his first card
+    game.dealer = {cards: [game.deck.pop()!], isHoleCardHidden: true, status: "playing"}; // handing the dealer his first card
+    game.player[0]?.cards.push(game.deck.pop()!); // handing the player his second card
+    game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
+
+    return game;
 }

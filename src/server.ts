@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
+import { initializeGame } from './utils.js';
 
 
 const app: Application = express();
@@ -26,13 +27,9 @@ const games = new Map<string, Game>();
 
 app.post('/new-game', (req: Request, res: Response) => {
     const gameId = randomUUID();
-    const game: Game = {
-        player: [], 
-        dealer: undefined, 
-        state: "player-turn"
-    };
+    const game: Game = initializeGame();
     games.set(gameId, game);
-    res.status(201).json({gameId});
+    res.status(201).json({gameId, dealersCard: game.dealer?.cards[0], playersCards: game.player[0]?.cards});
 });
 // === game logic ===
 
