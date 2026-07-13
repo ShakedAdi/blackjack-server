@@ -33,6 +33,12 @@ paths:
                 properties:
                   gameId:
                     type: string
+                  dealersCard:
+                    $ref: '#/components/schemas/Card'
+                  playersCards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
 
   /all-games:
     get:
