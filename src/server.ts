@@ -30,7 +30,7 @@ app.post('/new-game', (req: Request, res: Response) => {
     const gameId = randomUUID();
     const game: Game = initializeGame();
     games.set(gameId, game);
-    res.status(201).json({gameId, dealersCard: game.dealer?.cards[0], playersCards: game.player[0]?.cards});
+    res.status(201).json({gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0]});
 });
 
 app.post('/games/:gameId/hit', (req: Request<{gameId: string}>, res: Response) => {
