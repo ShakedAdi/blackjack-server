@@ -35,10 +35,8 @@ paths:
                     type: string
                   dealersCard:
                     $ref: '#/components/schemas/Card'
-                  playersCards:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Card'
+                  playersHand:
+                    $ref: '#/components/schemas/Hand'
 
   /games/{gameId}/hit:
     post:
