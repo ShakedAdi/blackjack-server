@@ -1,4 +1,4 @@
-import type { Card, Game, Rank, Suit } from "./types.js";
+import type { Card, Game, Hand, Rank, Suit } from "./types.js";
 
 // returns the card value as a number
 function cardValue(rank: Rank): number {
@@ -50,4 +50,23 @@ export function initializeGame(): Game {
     game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
 
     return game;
+}
+
+// returns the value of a given hand
+export function handValue(hand: Hand): number {
+    let aceCount = 0;
+    let value = 0;
+
+    // accumulating all the crads' values
+    hand.cards.forEach(card => {
+        if (card.rank === "A") aceCount++;
+        value += card.value;
+    });
+
+    // downgrading aces' values if the total value goes over 21
+    for (let i = 0; i < aceCount; i++) {
+        if (value > 21) value -= 10;
+    }
+
+    return value;
 }
