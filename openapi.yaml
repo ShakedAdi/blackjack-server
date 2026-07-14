@@ -40,6 +40,41 @@ paths:
                     items:
                       $ref: '#/components/schemas/Card'
 
+  /games/{gameId}/hit:
+    post:
+      summary: Draw a card into the active player hand
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card drawn
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newCard:
+                    $ref: '#/components/schemas/Card'
+                  status:
+                    type: string
+                    enum: [playing, stood, busted, blackjack]
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: It is not the player's turn, or no active hand to hit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /all-games:
     get:
       summary: List all in-memory games (debug endpoint)
@@ -55,6 +90,12 @@ paths:
 
 components:
   schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
     Card:
       type: object
       properties:
