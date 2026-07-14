@@ -49,6 +49,9 @@ export function initializeGame(): Game {
     game.player[0]?.cards.push(game.deck.pop()!); // handing the player his second card
     game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
 
+    // checks if its blackjack and updates the hand status
+    if (handValue(game.player[0]!) === 21) game.player[0]!.status = "blackjack";
+
     return game;
 }
 
