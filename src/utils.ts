@@ -50,18 +50,18 @@ export function initializeGame(): Game {
     game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
 
     // checks if its blackjack and updates the hand status
-    if (handValue(game.player[0]!) === 21) game.player[0]!.status = "blackjack";
+    if (handValue(game.player[0]!.cards) === 21) game.player[0]!.status = "blackjack";
 
     return game;
 }
 
 // returns the value of a given hand
-export function handValue(hand: Hand): number {
+export function handValue(cards: Card[]): number {
     let aceCount = 0;
     let value = 0;
 
     // accumulating all the crads' values
-    hand.cards.forEach(card => {
+    cards.forEach(card => {
         if (card.rank === "A") aceCount++;
         value += card.value;
     });

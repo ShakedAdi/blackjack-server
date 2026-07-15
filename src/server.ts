@@ -50,7 +50,7 @@ app.post('/games/:gameId/hit', (req: Request<{gameId: string}>, res: Response) =
             const newCard: Card = game.deck.pop()!;
             hand.cards.push(newCard);
 
-            const value: number = handValue(hand);
+            const value: number = handValue(hand.cards);
             if (value > 21) hand.status = "busted";
             if (value === 21) hand.status = "stood";
 
