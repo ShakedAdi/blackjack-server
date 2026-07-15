@@ -1,4 +1,4 @@
-import type { Card, Game, Hand, Rank, Suit } from "./types.js";
+import type { Card, Game, Rank, Suit } from "./types.js";
 
 // returns the card value as a number
 function cardValue(rank: Rank): number {
@@ -49,8 +49,8 @@ export function initializeGame(): Game {
     game.player[0]?.cards.push(game.deck.pop()!); // handing the player his second card
     game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
 
-    // checks if its blackjack and updates the hand status
-    if (handValue(game.player[0]!.cards) === 21) game.player[0]!.status = "blackjack";
+    if (handValue(game.player[0]!.cards) === 21) game.player[0]!.status = "blackjack"; // checks if the player got a blackjack
+    if (handValue(game.dealer.cards) === 21) game.dealer.status = "blackjack"; // checks if the dealer got a blackjack
 
     return game;
 }
