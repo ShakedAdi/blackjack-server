@@ -73,3 +73,12 @@ export function handValue(cards: Card[]): number {
 
     return value;
 }
+
+// dealer play startegy - hits on anything below 17
+export function dealerPlay(game: Game) {
+    while (handValue(game.dealer?.cards!) < 17) {
+        game.dealer?.cards.push(game.deck.pop()!);
+    }
+    
+    game.dealer!.status = handValue(game.dealer?.cards!) > 21 ? "busted" : "stood";
+}
