@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
-import { handValue, initializeGame } from './blackjack.service.js';
+import { advanceGameState, handValue, initializeGame } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
 
 export function createGame(req: Request, res: Response): void {
@@ -9,6 +9,7 @@ export function createGame(req: Request, res: Response): void {
     const game: Game = initializeGame();
     saveGame(gameId, game);
     res.status(201).json({ gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
+    advanceGameState(game);
 }
 
 export function hit(req: Request<{ gameId: string }>, res: Response): void {
@@ -29,6 +30,7 @@ export function hit(req: Request<{ gameId: string }>, res: Response): void {
             if (value > 21) hand.status = "busted";
             if (value === 21) hand.status = "stood";
             res.status(200).json({ newCard, status: hand.status });
+            advanceGameState(game);
             return;
         }
     }
@@ -49,6 +51,7 @@ export function stand(req: Request<{ gameId: string }>, res: Response): void {
         if (hand.status == "playing") {
             hand.status = "stood";
             res.status(200).json();
+            advanceGameState(game);
             return;
         }
     }
@@ -76,6 +79,7 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
             }
             game.player.push(newHand);
             res.status(200).json({ firstHand: hand, secondHand: newHand });
+            advanceGameState(game);
             return;
         }
     }
