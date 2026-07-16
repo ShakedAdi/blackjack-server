@@ -37,7 +37,39 @@ paths:
                     $ref: '#/components/schemas/Card'
                   playersHand:
                     $ref: '#/components/schemas/Hand'
-
+  /games/{gameId}/new-round:
+    post:
+      summary: Start a new round
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: New round started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dealersCard:
+                    $ref: '#/components/schemas/Card'
+                  playersHand:
+                    $ref: '#/components/schemas/Hand'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Round is not over
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /games/{gameId}/hit:
     post:
       summary: Draw a card into the active player hand
