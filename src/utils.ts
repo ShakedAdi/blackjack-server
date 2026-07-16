@@ -81,7 +81,9 @@ export function dealerPlay(game: Game) {
         game.dealer!.cards.push(game.deck.pop()!);
     }
     
-    game.dealer!.status = handValue(game.dealer!.cards) > 21 ? "busted" : "stood";
+    if (game.dealer!.status !== "blackjack") {
+        game.dealer!.status = handValue(game.dealer!.cards) > 21 ? "busted" : "stood";
+    }
 }
 
 // advances the game state if it should be advanced
