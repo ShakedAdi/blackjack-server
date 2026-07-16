@@ -63,6 +63,32 @@ app.post('/games/:gameId/hit', (req: Request<{gameId: string}>, res: Response) =
     return;
 });
 
+app.post('/games/:gameId/stand', (req: Request<{gameId: string}>, res: Response) => {
+    const game: Game | undefined = games.get(req.params.gameId);
+    if (!game) {
+        res.status(404).json({ error: 'Game not found' });
+        return;
+    }
+
+    if (game.state !== "player-turn") {
+        res.status(409).json({ error: "It is not the player's turn" });
+        return;
+    }
+
+    for (const hand of game.player) {
+        if (hand.status == "playing") {
+            hand.status = "stood";
+            res.status(200).json();
+            return;
+        }
+    }
+
+    res.status(409).json({ error: "No active hand" });
+    return;
+
+
+});
+
 app.post('/games/:gameId/split', (req: Request<{gameId: string}>, res: Response) => {
     const game: Game | undefined = games.get(req.params.gameId);
     if (!game) {
