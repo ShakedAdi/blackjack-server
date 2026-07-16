@@ -130,10 +130,18 @@ function resolveBets(game: Game): void {
 
 // advances the game state if it should be advanced
 export function advanceGameState(game: Game) {
-    if (game.state === "player-turn" && game.player.every(hand => hand.status !== "playing")) {
+    if (game.state === "player-turn" &&
+        (game.dealer!.status === "blackjack" || game.player.every(hand => hand.status !== "playing"))) {
         game.state = "dealer-turn";
         dealerPlay(game);
         resolveBets(game);
         game.state = "round-over";        
     }
+}
+
+// returns an error message if the bet is invalid, otherwise undefined
+export function getBetValidationError(balance: number, bet: number): string | undefined {
+    if (!Number.isFinite(bet) || bet <= 0) return "Bet must be a positive number";
+    if (bet > balance) return "Insufficient balance for this bet";
+    return undefined;
 }

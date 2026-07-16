@@ -1,18 +1,25 @@
 import type { Request, Response } from 'express';
-import type { Card, Game, Hand } from './types.js';
+import type { BetRequest, Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
-import { advanceGameState, handValue, initializeGame, initializeRound } from './blackjack.service.js';
+import { advanceGameState, getBetValidationError, handValue, initializeGame, initializeRound } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
 
-export function createGame(req: Request, res: Response): void {
+export function createGame(req: Request<unknown, unknown, BetRequest>, res: Response): void {
+    const { bet } = req.body;
+    const error = getBetValidationError(1000, bet);
+    if (error) {
+        res.status(error === "Insufficient balance for this bet" ? 409 : 400).json({ error });
+        return;
+    }
+
     const gameId = randomUUID();
-    const game: Game = initializeGame();
+    const game: Game = initializeGame(bet);
     saveGame(gameId, game);
-    res.status(201).json({ gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
     advanceGameState(game);
+    res.status(201).json({ gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
 }
 
-export function newRound(req: Request<{ gameId: string }>, res: Response): void {
+export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, res: Response): void {
     let game = getGame(req.params.gameId);
     if (!game) {
         res.status(404).json({ error: 'Game not found' });
@@ -23,10 +30,17 @@ export function newRound(req: Request<{ gameId: string }>, res: Response): void 
         return;
     }
 
-    game = initializeRound(game);
-    saveGame(req.params.gameId, game);
-    res.status(201).json({ dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
+    const { bet } = req.body;
+    const error = getBetValidationError(game.balance, bet);
+    if (error) {
+        res.status(error === "Insufficient balance for this bet" ? 409 : 400).json({ error });
+        return;
+    }
 
+    game = initializeRound(game, bet);
+    saveGame(req.params.gameId, game);
+    advanceGameState(game);
+    res.status(201).json({ dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
 }
 
 export function hit(req: Request<{ gameId: string }>, res: Response): void {
@@ -46,8 +60,8 @@ export function hit(req: Request<{ gameId: string }>, res: Response): void {
             const value = handValue(hand.cards);
             if (value > 21) hand.status = "busted";
             if (value === 21) hand.status = "stood";
-            res.status(200).json({ newCard, status: hand.status });
             advanceGameState(game);
+            res.status(200).json({ newCard, status: hand.status });
             return;
         }
     }
@@ -67,8 +81,8 @@ export function stand(req: Request<{ gameId: string }>, res: Response): void {
     for (const hand of game.player) {
         if (hand.status == "playing") {
             hand.status = "stood";
-            res.status(200).json();
             advanceGameState(game);
+            res.status(200).json();
             return;
         }
     }
@@ -87,7 +101,14 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
     }
     for (const hand of game.player) {
         if (hand.status == "playing" && hand.cards.length === 2 && hand.cards[0]?.rank === hand.cards[1]?.rank) {
-            const newHand: Hand = { cards: [hand.cards.pop()!], status: "playing" };
+            const error = getBetValidationError(game.balance, hand.bet);
+            if (error) {
+                res.status(409).json({ error: "Insufficient balance to split" });
+                return;
+            }
+            game.balance -= hand.bet;
+
+            const newHand: Hand = { cards: [hand.cards.pop()!], status: "playing", bet: hand.bet };
             hand.cards.push(game.deck.pop()!);
             newHand.cards.push(game.deck.pop()!);
             for (const h of [hand, newHand]) {
@@ -95,8 +116,8 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
                 if (value === 21) h.status = "stood";
             }
             game.player.push(newHand);
-            res.status(200).json({ firstHand: hand, secondHand: newHand });
             advanceGameState(game);
+            res.status(200).json({ firstHand: hand, secondHand: newHand });
             return;
         }
     }
@@ -110,8 +131,7 @@ export function getGameState(req: Request<{ gameId: string }>, res: Response): v
         return;
     }
     const dealer: Card[] = game.dealer!.isHoleCardHidden ? [game.dealer!.cards[0]!] : game.dealer!.cards;
-    res.status(200).json({ state: game.state, isHoleCardHidden: game.dealer?.isHoleCardHidden, player: game.player, dealer });
-}
+    res.status(200).json({ state: game.state, isHoleCardHidden: game.dealer?.isHoleCardHidden, player: game.player, dealer, balance: game.balance });}
 
 export function listAllGames(req: Request, res: Response): void {
     res.status(200).json(getAllGames());

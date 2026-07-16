@@ -23,6 +23,12 @@ paths:
   /new-game:
     post:
       summary: Create a new game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BetRequest'
       responses:
         '201':
           description: Game created
@@ -37,6 +43,18 @@ paths:
                     $ref: '#/components/schemas/Card'
                   playersHand:
                     $ref: '#/components/schemas/Hand'
+        '400':
+          description: Bet must be a positive number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Bet exceeds the starting balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /games/{gameId}/new-round:
     post:
       summary: Start a new round
@@ -46,6 +64,12 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BetRequest'
       responses:
         '201':
           description: New round started
@@ -58,6 +82,12 @@ paths:
                     $ref: '#/components/schemas/Card'
                   playersHand:
                     $ref: '#/components/schemas/Hand'
+        '400':
+          description: Bet must be a positive number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Game not found
           content:
@@ -65,7 +95,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Round is not over
+          description: Round is not over, or bet exceeds the current balance
           content:
             application/json:
               schema:
@@ -194,6 +224,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Card'
+                  balance:
+                    type: integer
         '404':
           description: Game not found
           content:
@@ -222,6 +254,13 @@ components:
         error:
           type: string
 
+    BetRequest:
+      type: object
+      required: [bet]
+      properties:
+        bet:
+          type: integer
+
     Card:
       type: object
       properties:
@@ -244,6 +283,12 @@ components:
         status:
           type: string
           enum: [playing, stood, busted, blackjack]
+        bet:
+          type: integer
+        outcome:
+          type: string
+          enum: [win, loss, push]
+          nullable: true
 
     DealerHand:
       allOf:
@@ -271,3 +316,5 @@ components:
         state:
           type: string
           enum: [player-turn, dealer-turn, round-over]
+        balance:
+          type: integer
