@@ -83,3 +83,12 @@ export function dealerPlay(game: Game) {
     
     game.dealer!.status = handValue(game.dealer!.cards) > 21 ? "busted" : "stood";
 }
+
+// advances the game state if it should be advanced
+export function advanceGameState(game: Game) {
+    if (game.state === "player-turn" && game.player.every(hand => hand.status !== "playing")) {
+        game.state = "dealer-turn";
+        dealerPlay(game);
+        game.state = "round-over";        
+    }
+}
