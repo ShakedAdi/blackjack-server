@@ -36,10 +36,11 @@ export function shuffleDeck(deck: Card[]): Card[] {
 }
 
 // initializes a round
-export function initializeRound(game: Game): Game {
+export function initializeRound(game: Game, bet: number): Game {
     game.state = "player-turn";
-    
-    game.player = [{cards: [game.deck.pop()!], status: "playing"}]; // handing the player his first card
+        game.balance -= bet;
+
+    game.player = [{cards: [game.deck.pop()!], status: "playing", bet}]; // handing the player his first card
     game.dealer = {cards: [game.deck.pop()!], isHoleCardHidden: true, status: "playing"}; // handing the dealer his first card
     game.player[0]?.cards.push(game.deck.pop()!); // handing the player his second card
     game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
@@ -51,15 +52,16 @@ export function initializeRound(game: Game): Game {
 }
 
 // initiliaze the game object with the shuffled deck, player's hand and the dealers hand
-export function initializeGame(): Game {
+export function initializeGame(bet: number): Game {
     let game: Game = {
         deck: shuffleDeck(generateDeck()),
         player: [],
         dealer: undefined,
-        state: "player-turn"
+        state: "player-turn",
+        balance: 1000
     }
     
-    game = initializeRound(game);
+    game = initializeRound(game, bet);
     return game;
 }
 
