@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
-import { advanceGameState, handValue, initializeGame } from './blackjack.service.js';
+import { advanceGameState, handValue, initializeGame, initializeRound } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
 
 export function createGame(req: Request, res: Response): void {
@@ -10,6 +10,23 @@ export function createGame(req: Request, res: Response): void {
     saveGame(gameId, game);
     res.status(201).json({ gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
     advanceGameState(game);
+}
+
+export function newRound(req: Request<{ gameId: string }>, res: Response): void {
+    let game = getGame(req.params.gameId);
+    if (!game) {
+        res.status(404).json({ error: 'Game not found' });
+        return;
+    }
+    if (game.state !== "round-over") {
+        res.status(409).json({ error: "The round is not over" });
+        return;
+    }
+
+    game = initializeRound(game);
+    saveGame(req.params.gameId, game);
+    res.status(201).json({ dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
+
 }
 
 export function hit(req: Request<{ gameId: string }>, res: Response): void {

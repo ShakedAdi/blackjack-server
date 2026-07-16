@@ -35,23 +35,31 @@ export function shuffleDeck(deck: Card[]): Card[] {
   return shuffled;
 }
 
+// initializes a round
+export function initializeRound(game: Game): Game {
+    game.state = "player-turn";
+    
+    game.player = [{cards: [game.deck.pop()!], status: "playing"}]; // handing the player his first card
+    game.dealer = {cards: [game.deck.pop()!], isHoleCardHidden: true, status: "playing"}; // handing the dealer his first card
+    game.player[0]?.cards.push(game.deck.pop()!); // handing the player his second card
+    game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
+
+    if (handValue(game.player[0]!.cards) === 21) game.player[0]!.status = "blackjack"; // checks if the player got a blackjack
+    if (handValue(game.dealer.cards) === 21) game.dealer.status = "blackjack"; // checks if the dealer got a blackjack\
+
+    return game;
+}
+
 // initiliaze the game object with the shuffled deck, player's hand and the dealers hand
 export function initializeGame(): Game {
-    const game: Game = {
+    let game: Game = {
         deck: shuffleDeck(generateDeck()),
         player: [],
         dealer: undefined,
         state: "player-turn"
     }
     
-    game.player.push({cards: [game.deck.pop()!], status: "playing"}); // handing the player his first card
-    game.dealer = {cards: [game.deck.pop()!], isHoleCardHidden: true, status: "playing"}; // handing the dealer his first card
-    game.player[0]?.cards.push(game.deck.pop()!); // handing the player his second card
-    game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
-
-    if (handValue(game.player[0]!.cards) === 21) game.player[0]!.status = "blackjack"; // checks if the player got a blackjack
-    if (handValue(game.dealer.cards) === 21) game.dealer.status = "blackjack"; // checks if the dealer got a blackjack
-
+    game = initializeRound(game);
     return game;
 }
 
