@@ -73,6 +73,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /games/{gameId}/stand:
+    post:
+      summary: Stand on the active player hand
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Hand stood
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: It is not the player's turn, or no active hand to stand
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /games/{gameId}/split:
     post:
       summary: Split a matching-rank pair into two hands
@@ -199,6 +224,10 @@ components:
     Game:
       type: object
       properties:
+        deck:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
         player:
           type: array
           items:
