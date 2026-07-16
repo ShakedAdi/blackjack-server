@@ -107,6 +107,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /games/{gameId}:
+    get:
+      summary: Get the current state of a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                    enum: [player-turn, dealer-turn, round-over]
+                  isHoleCardHidden:
+                    type: boolean
+                  player:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Hand'
+                  dealer:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /all-games:
     get:
       summary: List all in-memory games (debug endpoint)
