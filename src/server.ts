@@ -101,6 +101,18 @@ app.post('/games/:gameId/split', (req: Request<{gameId: string}>, res: Response)
     return;
 });
 
+app.get('/games/:gameId', (req: Request<{gameId: string}>, res: Response) => {
+    const game: Game | undefined = games.get(req.params.gameId);
+    if (!game) {
+        res.status(404).json({ error: 'Game not found' });
+        return;
+    }
+
+    const dealer: Card[] = game.dealer!.isHoleCardHidden ? [game.dealer!.cards[0]!] : game.dealer!.cards;
+    res.status(200).json({state: game.state, isHoleCardHidden: game.dealer?.isHoleCardHidden, player: game.player, dealer});
+    return;
+});
+
 // === game logic ===
 
 
