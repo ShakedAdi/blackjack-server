@@ -1,6 +1,6 @@
 import express, {type Application, type Request, type Response } from 'express';
 import cors from 'cors';
-import type { Card, Game } from './types.js';
+import type { Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'node:fs';
@@ -60,6 +60,44 @@ app.post('/games/:gameId/hit', (req: Request<{gameId: string}>, res: Response) =
     }
 
     res.status(409).json({ error: "No active hand to hit" });
+    return;
+});
+
+app.post('/games/:gameId/split', (req: Request<{gameId: string}>, res: Response) => {
+    const game: Game | undefined = games.get(req.params.gameId);
+    if (!game) {
+        res.status(404).json({ error: 'Game not found' });
+        return;
+    }
+
+    if (game.state !== "player-turn") {
+        res.status(409).json({ error: "It is not the player's turn" });
+        return;
+    }
+
+    for (const hand of game.player) {
+        if (hand.status == "playing" && hand.cards.length === 2 && hand.cards[0]?.rank === hand.cards[1]?.rank) {
+            // creates the new hand
+            const newHand: Hand = {cards: [hand.cards.pop()!], status: "playing"}; 
+
+            // deals a new card for the two hands
+            hand.cards.push(game.deck.pop()!);
+            newHand.cards.push(game.deck.pop()!);
+
+            // checks for blackjack in the two hands
+            for (const h of [hand, newHand]) {
+                const value = handValue(h.cards);
+                if (value === 21) h.status = "stood";
+            }
+            // adds the new hand to the player
+            game.player.push(newHand); 
+            
+            res.status(200).json({firstHand: hand, secondHand: newHand});
+            return;
+        }
+    }
+
+    res.status(409).json({ error: "No active hand to split" });
     return;
 });
 
