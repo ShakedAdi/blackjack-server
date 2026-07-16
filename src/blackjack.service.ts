@@ -96,11 +96,44 @@ export function dealerPlay(game: Game) {
     }
 }
 
+// settles the bet according to the game result
+function resolveBets(game: Game): void {
+    const dealer = game.dealer!;
+
+    for (const hand of game.player) {
+        if (dealer.status === "blackjack") {
+            if (hand.status === "blackjack") {
+                hand.outcome = "push";
+                game.balance += hand.bet;
+            } else {
+                hand.outcome = "loss";
+            }
+            continue;
+        }
+
+        if (hand.status === "busted") {
+            hand.outcome = "loss";
+        } else if (hand.status === "blackjack") {
+            hand.outcome = "win";
+            game.balance += hand.bet * 2.5;
+        } else if (dealer.status === "busted" || handValue(hand.cards) > handValue(dealer.cards)) {
+            hand.outcome = "win";
+            game.balance += hand.bet * 2;
+        } else if (handValue(hand.cards) === handValue(dealer.cards)) {
+            hand.outcome = "push";
+            game.balance += hand.bet;
+        } else {
+            hand.outcome = "loss";
+        }
+    }
+}
+
 // advances the game state if it should be advanced
 export function advanceGameState(game: Game) {
     if (game.state === "player-turn" && game.player.every(hand => hand.status !== "playing")) {
         game.state = "dealer-turn";
         dealerPlay(game);
+        resolveBets(game);
         game.state = "round-over";        
     }
 }
