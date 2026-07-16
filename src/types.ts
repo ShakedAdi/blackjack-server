@@ -10,7 +10,9 @@ export interface Card {
 
 export interface Hand {
     cards: Card[],
-    status: HandStatus
+    status: HandStatus,
+    bet: number,
+    outcome?: "win" | "loss" | "push"
 }
 
 export interface DealerHand {
@@ -23,5 +25,10 @@ export interface Game {
     deck: Card[],
     player: Hand[],
     dealer: DealerHand | undefined,
-    state: "player-turn" | "dealer-turn" | "round-over"
+    state: "player-turn" | "dealer-turn" | "round-over",
+    balance: number
+}
+
+export interface BetRequest {
+    bet: number
 }
