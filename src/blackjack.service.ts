@@ -1,4 +1,5 @@
 import type { Card, DealerHand, Game, Hand, Rank, Suit } from "./types.js";
+import { BLACKJACK_PAYOUT_MULTIPLIER, BLACKJACK_VALUE, DEALER_STAND_THRESHOLD, STARTING_BALANCE, WIN_PAYOUT_MULTIPLIER } from "./constants.js";
 
 // returns the card value as a number
 function cardValue(rank: Rank): number {
@@ -61,8 +62,8 @@ export function initializeRound(game: Game, bet: number): Game {
     playerHand.cards.push(popCard(game.deck)); // handing the player his second card
     dealerHand.cards.push(popCard(game.deck)); // handing the dealer his second card
 
-    if (handValue(playerHand.cards) === 21) playerHand.status = "blackjack"; // checks if the player got a blackjack
-    if (handValue(dealerHand.cards) === 21) dealerHand.status = "blackjack"; // checks if the dealer got a blackjack
+    if (handValue(playerHand.cards) === BLACKJACK_VALUE) playerHand.status = "blackjack"; // checks if the player got a blackjack
+    if (handValue(dealerHand.cards) === BLACKJACK_VALUE) dealerHand.status = "blackjack"; // checks if the dealer got a blackjack
 
     game.player = [playerHand];
     game.dealer = dealerHand;
@@ -77,7 +78,7 @@ export function initializeGame(bet: number): Game {
         player: [],
         dealer: { cards: [], isHoleCardHidden: true, status: "playing" }, // placeholder, replaced by initializeRound below
         state: "player-turn",
-        balance: 1000
+        balance: STARTING_BALANCE
     }
     
     game = initializeRound(game, bet);
@@ -97,7 +98,7 @@ export function handValue(cards: Card[]): number {
 
     // downgrading aces' values if the total value goes over 21
     for (let i = 0; i < aceCount; i++) {
-        if (value > 21) value -= 10;
+        if (value > BLACKJACK_VALUE) value -= 10;
     }
 
     return value;
@@ -106,8 +107,8 @@ export function handValue(cards: Card[]): number {
 // determines a hand's status after a card is dealt during the player's turn
 export function resolveHandStatus(cards: Card[]): "playing" | "stood" | "busted" {
     const value = handValue(cards);
-    if (value > 21) return "busted";
-    if (value === 21) return "stood";
+    if (value > BLACKJACK_VALUE) return "busted";
+    if (value === BLACKJACK_VALUE) return "stood";
     return "playing";
 }
 
@@ -119,12 +120,12 @@ export function getActiveHand(game: Game): Hand | undefined {
 // dealer play startegy - hits on anything below 17
 export function dealerPlay(game: Game) {
     game.dealer.isHoleCardHidden = false;
-    while (handValue(game.dealer.cards) < 17) {
+    while (handValue(game.dealer.cards) < DEALER_STAND_THRESHOLD) {
         game.dealer.cards.push(popCard(game.deck));
     }
 
     if (game.dealer.status !== "blackjack") {
-        game.dealer.status = handValue(game.dealer.cards) > 21 ? "busted" : "stood";
+        game.dealer.status = handValue(game.dealer.cards) > BLACKJACK_VALUE ? "busted" : "stood";
     }
 }
 
@@ -147,10 +148,10 @@ function resolveBets(game: Game): void {
             hand.outcome = "loss";
         } else if (hand.status === "blackjack") {
             hand.outcome = "win";
-            game.balance += hand.bet * 2.5;
+            game.balance += hand.bet * BLACKJACK_PAYOUT_MULTIPLIER;
         } else if (dealer.status === "busted" || handValue(hand.cards) > handValue(dealer.cards)) {
             hand.outcome = "win";
-            game.balance += hand.bet * 2;
+            game.balance += hand.bet * WIN_PAYOUT_MULTIPLIER;
         } else if (handValue(hand.cards) === handValue(dealer.cards)) {
             hand.outcome = "push";
             game.balance += hand.bet;

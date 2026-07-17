@@ -3,6 +3,7 @@ import type { BetRequest, Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
 import { advanceGameState, first, getActiveHand, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
+import { BLACKJACK_VALUE, INITIAL_HAND_SIZE, STARTING_BALANCE } from './constants.js';
 
 // fetches a game and ensures it's the player's turn, writing the appropriate error response otherwise
 function requireActiveGame(gameId: string, res: Response): Game | undefined {
@@ -20,7 +21,7 @@ function requireActiveGame(gameId: string, res: Response): Game | undefined {
 
 export function createGame(req: Request<unknown, unknown, BetRequest>, res: Response): void {
     const { bet } = req.body;
-    const error = getBetValidationError(1000, bet);
+    const error = getBetValidationError(STARTING_BALANCE, bet);
     if (error) {
         res.status(error === "Insufficient balance for this bet" ? 409 : 400).json({ error });
         return;
@@ -93,7 +94,7 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = game.player.find(h => h.status === "playing" && h.cards.length === 2 && h.cards[0]?.rank === h.cards[1]?.rank);
+    const hand = game.player.find(h => h.status === "playing" && h.cards.length === INITIAL_HAND_SIZE && h.cards[0]?.rank === h.cards[1]?.rank);
     if (!hand) {
         res.status(409).json({ error: "No active hand to split" });
         return;
@@ -122,7 +123,7 @@ export function double(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = game.player.find(h => h.status === "playing" && h.cards.length === 2);
+    const hand = game.player.find(h => h.status === "playing" && h.cards.length === INITIAL_HAND_SIZE);
     if (!hand) {
         res.status(409).json({ error: "No active hand to double" });
         return;
@@ -139,7 +140,7 @@ export function double(req: Request<{ gameId: string }>, res: Response): void {
 
     const newCard: Card = popCard(game.deck);
     hand.cards.push(newCard);
-    hand.status = handValue(hand.cards) > 21 ? "busted" : "stood";
+    hand.status = handValue(hand.cards) > BLACKJACK_VALUE ? "busted" : "stood";
 
     advanceGameState(game);
     res.status(200).json({ newCard, status: hand.status });
