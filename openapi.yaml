@@ -43,6 +43,8 @@ paths:
                     $ref: '#/components/schemas/Card'
                   playersHand:
                     $ref: '#/components/schemas/Hand'
+                  balance:
+                    type: integer
         '400':
           description: Bet must be a positive number
           content:
@@ -82,6 +84,8 @@ paths:
                     $ref: '#/components/schemas/Card'
                   playersHand:
                     $ref: '#/components/schemas/Hand'
+                  balance:
+                    type: integer
         '400':
           description: Bet must be a positive number
           content:

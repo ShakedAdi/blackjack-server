@@ -16,7 +16,7 @@ export function createGame(req: Request<unknown, unknown, BetRequest>, res: Resp
     const game: Game = initializeGame(bet);
     saveGame(gameId, game);
     advanceGameState(game);
-    res.status(201).json({ gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
+    res.status(201).json({ gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0], balance: game.balance });
 }
 
 export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, res: Response): void {
@@ -40,7 +40,7 @@ export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, 
     game = initializeRound(game, bet);
     saveGame(req.params.gameId, game);
     advanceGameState(game);
-    res.status(201).json({ dealersCard: game.dealer?.cards[0], playersHand: game.player[0] });
+    res.status(201).json({ dealersCard: game.dealer?.cards[0], playersHand: game.player[0], balance: game.balance });
 }
 
 export function hit(req: Request<{ gameId: string }>, res: Response): void {
