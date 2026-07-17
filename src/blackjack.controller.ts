@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { BetRequest, Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
-import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard } from './blackjack.service.js';
+import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
 
 export function createGame(req: Request<unknown, unknown, BetRequest>, res: Response): void {
@@ -57,9 +57,7 @@ export function hit(req: Request<{ gameId: string }>, res: Response): void {
         if (hand.status == "playing") {
             const newCard: Card = popCard(game.deck);
             hand.cards.push(newCard);
-            const value = handValue(hand.cards);
-            if (value > 21) hand.status = "busted";
-            if (value === 21) hand.status = "stood";
+            hand.status = resolveHandStatus(hand.cards);
             advanceGameState(game);
             res.status(200).json({ newCard, status: hand.status });
             return;
@@ -106,16 +104,16 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
                 res.status(409).json({ error: "Insufficient balance to split" });
                 return;
             }
+
             game.balance -= hand.bet;
 
             const newHand: Hand = { cards: [popCard(hand.cards)], status: "playing", bet: hand.bet };
             hand.cards.push(popCard(game.deck));
             newHand.cards.push(popCard(game.deck));
-            for (const h of [hand, newHand]) {
-                const value = handValue(h.cards);
-                if (value === 21) h.status = "stood";
-            }
+            hand.status = resolveHandStatus(hand.cards);
+            newHand.status = resolveHandStatus(newHand.cards);
             game.player.push(newHand);
+            
             advanceGameState(game);
             res.status(200).json({ firstHand: hand, secondHand: newHand });
             return;
@@ -148,9 +146,9 @@ export function double(req: Request<{ gameId: string }>, res: Response): void {
             const newCard: Card = popCard(game.deck);
             hand.cards.push(newCard);
             hand.status = handValue(hand.cards) > 21 ? "busted" : "stood";
+            
             advanceGameState(game);
             res.status(200).json({ newCard, status: hand.status });
-
             return;
         }
     }

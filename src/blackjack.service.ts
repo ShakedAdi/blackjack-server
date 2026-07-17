@@ -103,6 +103,14 @@ export function handValue(cards: Card[]): number {
     return value;
 }
 
+// determines a hand's status after a card is dealt during the player's turn
+export function resolveHandStatus(cards: Card[]): "playing" | "stood" | "busted" {
+    const value = handValue(cards);
+    if (value > 21) return "busted";
+    if (value === 21) return "stood";
+    return "playing";
+}
+
 // dealer play startegy - hits on anything below 17
 export function dealerPlay(game: Game) {
     game.dealer.isHoleCardHidden = false;
