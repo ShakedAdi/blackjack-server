@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { BetRequest, Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
-import { advanceGameState, getBetValidationError, handValue, initializeGame, initializeRound } from './blackjack.service.js';
+import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
 
 export function createGame(req: Request<unknown, unknown, BetRequest>, res: Response): void {
@@ -16,7 +16,7 @@ export function createGame(req: Request<unknown, unknown, BetRequest>, res: Resp
     const game: Game = initializeGame(bet);
     saveGame(gameId, game);
     advanceGameState(game);
-    res.status(201).json({ gameId, dealersCard: game.dealer?.cards[0], playersHand: game.player[0], balance: game.balance });
+    res.status(201).json({ gameId, dealersCard: first(game.dealer.cards), playersHand: first(game.player), balance: game.balance });
 }
 
 export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, res: Response): void {
@@ -40,7 +40,7 @@ export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, 
     game = initializeRound(game, bet);
     saveGame(req.params.gameId, game);
     advanceGameState(game);
-    res.status(201).json({ dealersCard: game.dealer?.cards[0], playersHand: game.player[0], balance: game.balance });
+    res.status(201).json({ dealersCard: first(game.dealer.cards), playersHand: first(game.player), balance: game.balance });
 }
 
 export function hit(req: Request<{ gameId: string }>, res: Response): void {
@@ -55,7 +55,7 @@ export function hit(req: Request<{ gameId: string }>, res: Response): void {
     }
     for (const hand of game.player) {
         if (hand.status == "playing") {
-            const newCard: Card = game.deck.pop()!;
+            const newCard: Card = popCard(game.deck);
             hand.cards.push(newCard);
             const value = handValue(hand.cards);
             if (value > 21) hand.status = "busted";
@@ -108,9 +108,9 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
             }
             game.balance -= hand.bet;
 
-            const newHand: Hand = { cards: [hand.cards.pop()!], status: "playing", bet: hand.bet };
-            hand.cards.push(game.deck.pop()!);
-            newHand.cards.push(game.deck.pop()!);
+            const newHand: Hand = { cards: [popCard(hand.cards)], status: "playing", bet: hand.bet };
+            hand.cards.push(popCard(game.deck));
+            newHand.cards.push(popCard(game.deck));
             for (const h of [hand, newHand]) {
                 const value = handValue(h.cards);
                 if (value === 21) h.status = "stood";
@@ -145,7 +145,7 @@ export function double(req: Request<{ gameId: string }>, res: Response): void {
             game.balance -= hand.bet;
             hand.bet += hand.bet;
 
-            const newCard: Card = game.deck.pop()!;
+            const newCard: Card = popCard(game.deck);
             hand.cards.push(newCard);
             hand.status = handValue(hand.cards) > 21 ? "busted" : "stood";
             advanceGameState(game);
@@ -163,8 +163,9 @@ export function getGameState(req: Request<{ gameId: string }>, res: Response): v
         res.status(404).json({ error: 'Game not found' });
         return;
     }
-    const dealer: Card[] = game.dealer!.isHoleCardHidden ? [game.dealer!.cards[0]!] : game.dealer!.cards;
-    res.status(200).json({ state: game.state, isHoleCardHidden: game.dealer?.isHoleCardHidden, player: game.player, dealer, balance: game.balance });}
+    const dealer: Card[] = game.dealer.isHoleCardHidden ? [first(game.dealer.cards)] : game.dealer.cards;
+    res.status(200).json({ state: game.state, isHoleCardHidden: game.dealer.isHoleCardHidden, player: game.player, dealer, balance: game.balance });
+}
 
 export function listAllGames(req: Request, res: Response): void {
     res.status(200).json(getAllGames());

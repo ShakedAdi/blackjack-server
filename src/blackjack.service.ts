@@ -1,10 +1,24 @@
-import type { Card, Game, Rank, Suit } from "./types.js";
+import type { Card, DealerHand, Game, Hand, Rank, Suit } from "./types.js";
 
 // returns the card value as a number
 function cardValue(rank: Rank): number {
     if (!isNaN(Number(rank)) && isFinite(Number(rank))) return Number(rank);
     if (rank === "A") return 11;
     return 10;
+}
+
+// pops the top card off an array of cards, throwing if none remain
+export function popCard(cards: Card[]): Card {
+    const card = cards.pop();
+    if (!card) throw new Error("Cannot draw a card: array is empty");
+    return card;
+}
+
+// returns the first element of an array, throwing if it's empty
+export function first<T>(items: T[]): T {
+    const item = items[0];
+    if (item === undefined) throw new Error("Expected a non-empty array");
+    return item;
 }
 
 // generates an unshuffled deck containing all 52 cards
@@ -42,13 +56,16 @@ export function initializeRound(game: Game, bet: number): Game {
     game.state = "player-turn";
     game.balance -= bet;
 
-    game.player = [{cards: [game.deck.pop()!], status: "playing", bet}]; // handing the player his first card
-    game.dealer = {cards: [game.deck.pop()!], isHoleCardHidden: true, status: "playing"}; // handing the dealer his first card
-    game.player[0]?.cards.push(game.deck.pop()!); // handing the player his second card
-    game.dealer.cards.push(game.deck.pop()!); // handing the dealer his second card
+    const playerHand: Hand = { cards: [popCard(game.deck)], status: "playing", bet }; // handing the player his first card
+    const dealerHand: DealerHand = { cards: [popCard(game.deck)], isHoleCardHidden: true, status: "playing" }; // handing the dealer his first card
+    playerHand.cards.push(popCard(game.deck)); // handing the player his second card
+    dealerHand.cards.push(popCard(game.deck)); // handing the dealer his second card
 
-    if (handValue(game.player[0]!.cards) === 21) game.player[0]!.status = "blackjack"; // checks if the player got a blackjack
-    if (handValue(game.dealer.cards) === 21) game.dealer.status = "blackjack"; // checks if the dealer got a blackjack\
+    if (handValue(playerHand.cards) === 21) playerHand.status = "blackjack"; // checks if the player got a blackjack
+    if (handValue(dealerHand.cards) === 21) dealerHand.status = "blackjack"; // checks if the dealer got a blackjack
+
+    game.player = [playerHand];
+    game.dealer = dealerHand;
 
     return game;
 }
@@ -58,7 +75,7 @@ export function initializeGame(bet: number): Game {
     let game: Game = {
         deck: [],
         player: [],
-        dealer: undefined,
+        dealer: { cards: [], isHoleCardHidden: true, status: "playing" }, // placeholder, replaced by initializeRound below
         state: "player-turn",
         balance: 1000
     }
@@ -88,19 +105,19 @@ export function handValue(cards: Card[]): number {
 
 // dealer play startegy - hits on anything below 17
 export function dealerPlay(game: Game) {
-    game.dealer!.isHoleCardHidden = false;
-    while (handValue(game.dealer!.cards) < 17) {
-        game.dealer!.cards.push(game.deck.pop()!);
+    game.dealer.isHoleCardHidden = false;
+    while (handValue(game.dealer.cards) < 17) {
+        game.dealer.cards.push(popCard(game.deck));
     }
-    
-    if (game.dealer!.status !== "blackjack") {
-        game.dealer!.status = handValue(game.dealer!.cards) > 21 ? "busted" : "stood";
+
+    if (game.dealer.status !== "blackjack") {
+        game.dealer.status = handValue(game.dealer.cards) > 21 ? "busted" : "stood";
     }
 }
 
 // settles the bet according to the game result
 function resolveBets(game: Game): void {
-    const dealer = game.dealer!;
+    const dealer = game.dealer;
 
     for (const hand of game.player) {
         if (dealer.status === "blackjack") {
@@ -133,7 +150,7 @@ function resolveBets(game: Game): void {
 // advances the game state if it should be advanced
 export function advanceGameState(game: Game) {
     if (game.state === "player-turn" &&
-        (game.dealer!.status === "blackjack" || game.player.every(hand => hand.status !== "playing"))) {
+        (game.dealer.status === "blackjack" || game.player.every(hand => hand.status !== "playing"))) {
         game.state = "dealer-turn";
         dealerPlay(game);
         resolveBets(game);

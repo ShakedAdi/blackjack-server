@@ -24,7 +24,7 @@ export interface DealerHand {
 export interface Game {
     deck: Card[],
     player: Hand[],
-    dealer: DealerHand | undefined,
+    dealer: DealerHand,
     state: "player-turn" | "dealer-turn" | "round-over",
     balance: number
 }
