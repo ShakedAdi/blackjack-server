@@ -23,7 +23,7 @@ export function createGame(req: Request<unknown, unknown, BetRequest>, res: Resp
     const { bet } = req.body;
     const error = getBetValidationError(STARTING_BALANCE, bet);
     if (error) {
-        res.status(error === "Insufficient balance for this bet" ? 409 : 400).json({ error });
+        res.status(error.status).json({ error: error.message });
         return;
     }
 
@@ -48,7 +48,7 @@ export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, 
     const { bet } = req.body;
     const error = getBetValidationError(game.balance, bet);
     if (error) {
-        res.status(error === "Insufficient balance for this bet" ? 409 : 400).json({ error });
+        res.status(error.status).json({ error: error.message });
         return;
     }
 
@@ -102,7 +102,7 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
 
     const error = getBetValidationError(game.balance, hand.bet);
     if (error) {
-        res.status(409).json({ error: "Insufficient balance to split" });
+        res.status(error.status).json({ error: error.message });
         return;
     }
 
@@ -131,7 +131,7 @@ export function double(req: Request<{ gameId: string }>, res: Response): void {
 
     const error = getBetValidationError(game.balance, hand.bet);
     if (error) {
-        res.status(409).json({ error: "Insufficient balance to double" });
+        res.status(error.status).json({ error: error.message });
         return;
     }
 
