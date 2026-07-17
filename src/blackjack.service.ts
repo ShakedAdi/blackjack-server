@@ -112,11 +112,6 @@ export function resolveHandStatus(cards: Card[]): "playing" | "stood" | "busted"
     return "playing";
 }
 
-// returns the hand currently awaiting player action, if any
-export function getActiveHand(game: Game): Hand | undefined {
-    return game.player.find(hand => hand.status === "playing");
-}
-
 // dealer play startegy - hits on anything below 17
 export function dealerPlay(game: Game) {
     game.dealer.isHoleCardHidden = false;

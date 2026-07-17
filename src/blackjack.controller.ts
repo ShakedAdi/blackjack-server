@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { BetRequest, Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
-import { advanceGameState, first, getActiveHand, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
+import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
 import { BLACKJACK_VALUE, INITIAL_HAND_SIZE, STARTING_BALANCE } from './constants.js';
 
@@ -62,7 +62,7 @@ export function hit(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = getActiveHand(game);
+    const hand = game.player.find(hand => hand.status === "playing");
     if (!hand) {
         res.status(409).json({ error: "No active hand to hit" });
         return;
@@ -79,7 +79,7 @@ export function stand(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = getActiveHand(game);
+    const hand = game.player.find(hand => hand.status === "playing");
     if (!hand) {
         res.status(409).json({ error: "No active hand" });
         return;
