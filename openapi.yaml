@@ -164,6 +164,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /games/{gameId}/double:
+    post:
+      summary: Double the bet on the active hand, draw exactly one card, and stand
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card drawn, bet doubled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newCard:
+                    $ref: '#/components/schemas/Card'
+                  status:
+                    type: string
+                    enum: [playing, stood, busted, blackjack]
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: It is not the player's turn, no active hand to double, or insufficient balance to double
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /games/{gameId}/split:
     post:
       summary: Split a matching-rank pair into two hands

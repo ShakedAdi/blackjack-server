@@ -38,7 +38,7 @@ export function shuffleDeck(deck: Card[]): Card[] {
 // initializes a round
 export function initializeRound(game: Game, bet: number): Game {
     game.state = "player-turn";
-        game.balance -= bet;
+    game.balance -= bet;
 
     game.player = [{cards: [game.deck.pop()!], status: "playing", bet}]; // handing the player his first card
     game.dealer = {cards: [game.deck.pop()!], isHoleCardHidden: true, status: "playing"}; // handing the dealer his first card

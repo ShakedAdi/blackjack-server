@@ -124,6 +124,39 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
     res.status(409).json({ error: "No active hand to split" });
 }
 
+export function double(req: Request<{ gameId: string }>, res: Response): void {
+    const game = getGame(req.params.gameId);
+    if (!game) {
+        res.status(404).json({ error: 'Game not found' });
+        return;
+    }
+    if (game.state !== "player-turn") {
+        res.status(409).json({ error: "It is not the player's turn" });
+        return;
+    }
+    for (const hand of game.player) {
+        if (hand.status == "playing" && hand.cards.length === 2) {
+            const error = getBetValidationError(game.balance, hand.bet);
+            if (error) {
+                res.status(409).json({ error: "Insufficient balance to double" });
+                return;
+            }
+
+            game.balance -= hand.bet;
+            hand.bet += hand.bet;
+
+            const newCard: Card = game.deck.pop()!;
+            hand.cards.push(newCard);
+            hand.status = handValue(hand.cards) > 21 ? "busted" : "stood";
+            advanceGameState(game);
+            res.status(200).json({ newCard, status: hand.status });
+
+            return;
+        }
+    }
+    res.status(409).json({ error: "No active hand to double" });
+}
+
 export function getGameState(req: Request<{ gameId: string }>, res: Response): void {
     const game = getGame(req.params.gameId);
     if (!game) {
