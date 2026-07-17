@@ -37,6 +37,8 @@ export function shuffleDeck(deck: Card[]): Card[] {
 
 // initializes a round
 export function initializeRound(game: Game, bet: number): Game {
+    game.deck = shuffleDeck(generateDeck());
+    
     game.state = "player-turn";
     game.balance -= bet;
 
@@ -54,7 +56,7 @@ export function initializeRound(game: Game, bet: number): Game {
 // initiliaze the game object with the shuffled deck, player's hand and the dealers hand
 export function initializeGame(bet: number): Game {
     let game: Game = {
-        deck: shuffleDeck(generateDeck()),
+        deck: [],
         player: [],
         dealer: undefined,
         state: "player-turn",
