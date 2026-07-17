@@ -1,8 +1,22 @@
 import type { Request, Response } from 'express';
 import type { BetRequest, Card, Game, Hand } from './types.js';
 import { randomUUID } from 'node:crypto';
-import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
+import { advanceGameState, first, getActiveHand, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
+
+// fetches a game and ensures it's the player's turn, writing the appropriate error response otherwise
+function requireActiveGame(gameId: string, res: Response): Game | undefined {
+    const game = getGame(gameId);
+    if (!game) {
+        res.status(404).json({ error: 'Game not found' });
+        return undefined;
+    }
+    if (game.state !== "player-turn") {
+        res.status(409).json({ error: "It is not the player's turn" });
+        return undefined;
+    }
+    return game;
+}
 
 export function createGame(req: Request<unknown, unknown, BetRequest>, res: Response): void {
     const { bet } = req.body;
@@ -44,115 +58,91 @@ export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, 
 }
 
 export function hit(req: Request<{ gameId: string }>, res: Response): void {
-    const game = getGame(req.params.gameId);
-    if (!game) {
-        res.status(404).json({ error: 'Game not found' });
+    const game = requireActiveGame(req.params.gameId, res);
+    if (!game) return;
+
+    const hand = getActiveHand(game);
+    if (!hand) {
+        res.status(409).json({ error: "No active hand to hit" });
         return;
     }
-    if (game.state !== "player-turn") {
-        res.status(409).json({ error: "It is not the player's turn" });
-        return;
-    }
-    for (const hand of game.player) {
-        if (hand.status == "playing") {
-            const newCard: Card = popCard(game.deck);
-            hand.cards.push(newCard);
-            hand.status = resolveHandStatus(hand.cards);
-            advanceGameState(game);
-            res.status(200).json({ newCard, status: hand.status });
-            return;
-        }
-    }
-    res.status(409).json({ error: "No active hand to hit" });
+
+    const newCard: Card = popCard(game.deck);
+    hand.cards.push(newCard);
+    hand.status = resolveHandStatus(hand.cards);
+    advanceGameState(game);
+    res.status(200).json({ newCard, status: hand.status });
 }
 
 export function stand(req: Request<{ gameId: string }>, res: Response): void {
-    const game = getGame(req.params.gameId);
-    if (!game) {
-        res.status(404).json({ error: 'Game not found' });
+    const game = requireActiveGame(req.params.gameId, res);
+    if (!game) return;
+
+    const hand = getActiveHand(game);
+    if (!hand) {
+        res.status(409).json({ error: "No active hand" });
         return;
     }
-    if (game.state !== "player-turn") {
-        res.status(409).json({ error: "It is not the player's turn" });
-        return;
-    }
-    for (const hand of game.player) {
-        if (hand.status == "playing") {
-            hand.status = "stood";
-            advanceGameState(game);
-            res.status(200).json();
-            return;
-        }
-    }
-    res.status(409).json({ error: "No active hand" });
+
+    hand.status = "stood";
+    advanceGameState(game);
+    res.status(200).json();
 }
 
 export function split(req: Request<{ gameId: string }>, res: Response): void {
-    const game = getGame(req.params.gameId);
-    if (!game) {
-        res.status(404).json({ error: 'Game not found' });
+    const game = requireActiveGame(req.params.gameId, res);
+    if (!game) return;
+
+    const hand = game.player.find(h => h.status === "playing" && h.cards.length === 2 && h.cards[0]?.rank === h.cards[1]?.rank);
+    if (!hand) {
+        res.status(409).json({ error: "No active hand to split" });
         return;
     }
-    if (game.state !== "player-turn") {
-        res.status(409).json({ error: "It is not the player's turn" });
+
+    const error = getBetValidationError(game.balance, hand.bet);
+    if (error) {
+        res.status(409).json({ error: "Insufficient balance to split" });
         return;
     }
-    for (const hand of game.player) {
-        if (hand.status == "playing" && hand.cards.length === 2 && hand.cards[0]?.rank === hand.cards[1]?.rank) {
-            const error = getBetValidationError(game.balance, hand.bet);
-            if (error) {
-                res.status(409).json({ error: "Insufficient balance to split" });
-                return;
-            }
 
-            game.balance -= hand.bet;
+    game.balance -= hand.bet;
 
-            const newHand: Hand = { cards: [popCard(hand.cards)], status: "playing", bet: hand.bet };
-            hand.cards.push(popCard(game.deck));
-            newHand.cards.push(popCard(game.deck));
-            hand.status = resolveHandStatus(hand.cards);
-            newHand.status = resolveHandStatus(newHand.cards);
-            game.player.push(newHand);
-            
-            advanceGameState(game);
-            res.status(200).json({ firstHand: hand, secondHand: newHand });
-            return;
-        }
-    }
-    res.status(409).json({ error: "No active hand to split" });
+    const newHand: Hand = { cards: [popCard(hand.cards)], status: "playing", bet: hand.bet };
+    hand.cards.push(popCard(game.deck));
+    newHand.cards.push(popCard(game.deck));
+    hand.status = resolveHandStatus(hand.cards);
+    newHand.status = resolveHandStatus(newHand.cards);
+    game.player.push(newHand);
+
+    advanceGameState(game);
+    res.status(200).json({ firstHand: hand, secondHand: newHand });
 }
 
 export function double(req: Request<{ gameId: string }>, res: Response): void {
-    const game = getGame(req.params.gameId);
-    if (!game) {
-        res.status(404).json({ error: 'Game not found' });
+    const game = requireActiveGame(req.params.gameId, res);
+    if (!game) return;
+
+    const hand = game.player.find(h => h.status === "playing" && h.cards.length === 2);
+    if (!hand) {
+        res.status(409).json({ error: "No active hand to double" });
         return;
     }
-    if (game.state !== "player-turn") {
-        res.status(409).json({ error: "It is not the player's turn" });
+
+    const error = getBetValidationError(game.balance, hand.bet);
+    if (error) {
+        res.status(409).json({ error: "Insufficient balance to double" });
         return;
     }
-    for (const hand of game.player) {
-        if (hand.status == "playing" && hand.cards.length === 2) {
-            const error = getBetValidationError(game.balance, hand.bet);
-            if (error) {
-                res.status(409).json({ error: "Insufficient balance to double" });
-                return;
-            }
 
-            game.balance -= hand.bet;
-            hand.bet += hand.bet;
+    game.balance -= hand.bet;
+    hand.bet += hand.bet;
 
-            const newCard: Card = popCard(game.deck);
-            hand.cards.push(newCard);
-            hand.status = handValue(hand.cards) > 21 ? "busted" : "stood";
-            
-            advanceGameState(game);
-            res.status(200).json({ newCard, status: hand.status });
-            return;
-        }
-    }
-    res.status(409).json({ error: "No active hand to double" });
+    const newCard: Card = popCard(game.deck);
+    hand.cards.push(newCard);
+    hand.status = handValue(hand.cards) > 21 ? "busted" : "stood";
+
+    advanceGameState(game);
+    res.status(200).json({ newCard, status: hand.status });
 }
 
 export function getGameState(req: Request<{ gameId: string }>, res: Response): void {
