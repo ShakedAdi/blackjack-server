@@ -1,0 +1,359 @@
+openapi: 3.0.0
+info:
+  title: Blackjack API
+  version: 1.0.0
+servers:
+  - url: http://localhost:42069
+
+paths:
+  /status:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Server is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isRunning:
+                    type: boolean
+
+  /new-game:
+    post:
+      summary: Create a new game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BetRequest'
+      responses:
+        '201':
+          description: Game created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gameId:
+                    type: string
+                  dealersCard:
+                    $ref: '#/components/schemas/Card'
+                  playersHand:
+                    $ref: '#/components/schemas/Hand'
+                  balance:
+                    type: integer
+        '400':
+          description: Bet must be a positive number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Bet exceeds the starting balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /games/{gameId}/new-round:
+    post:
+      summary: Start a new round
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BetRequest'
+      responses:
+        '201':
+          description: New round started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dealersCard:
+                    $ref: '#/components/schemas/Card'
+                  playersHand:
+                    $ref: '#/components/schemas/Hand'
+                  balance:
+                    type: integer
+        '400':
+          description: Bet must be a positive number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Round is not over, or bet exceeds the current balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /games/{gameId}/hit:
+    post:
+      summary: Draw a card into the active player hand
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card drawn
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newCard:
+                    $ref: '#/components/schemas/Card'
+                  status:
+                    type: string
+                    enum: [playing, stood, busted, blackjack]
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: It is not the player's turn, or no active hand to hit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/stand:
+    post:
+      summary: Stand on the active player hand
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Hand stood
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: It is not the player's turn, or no active hand to stand
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/double:
+    post:
+      summary: Double the bet on the active hand, draw exactly one card, and stand
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card drawn, bet doubled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newCard:
+                    $ref: '#/components/schemas/Card'
+                  status:
+                    type: string
+                    enum: [playing, stood, busted, blackjack]
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: It is not the player's turn, no active hand to double, or insufficient balance to double
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/split:
+    post:
+      summary: Split a matching-rank pair into two hands
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Hand split
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firstHand:
+                    $ref: '#/components/schemas/Hand'
+                  secondHand:
+                    $ref: '#/components/schemas/Hand'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: It is not the player's turn, or no active hand to split
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}:
+    get:
+      summary: Get the current state of a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                    enum: [player-turn, dealer-turn, round-over]
+                  isHoleCardHidden:
+                    type: boolean
+                  player:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Hand'
+                  dealer:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+                  balance:
+                    type: integer
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /all-games:
+    get:
+      summary: List all in-memory games (debug endpoint)
+      responses:
+        '200':
+          description: Map of gameId to Game
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Game'
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+    BetRequest:
+      type: object
+      required: [bet]
+      properties:
+        bet:
+          type: integer
+
+    Card:
+      type: object
+      properties:
+        rank:
+          type: string
+          enum: ['2', '3', '4', '5', '6', '7', '8', '9', '10', J, Q, K, A]
+        suit:
+          type: string
+          enum: [spades, hearts, diamonds, clubs]
+        value:
+          type: integer
+
+    Hand:
+      type: object
+      properties:
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+        status:
+          type: string
+          enum: [playing, stood, busted, blackjack]
+        bet:
+          type: integer
+        outcome:
+          type: string
+          enum: [win, loss, push]
+          nullable: true
+
+    DealerHand:
+      allOf:
+        - $ref: '#/components/schemas/Hand'
+        - type: object
+          properties:
+            isHoleCardHidden:
+              type: boolean
+
+    Game:
+      type: object
+      properties:
+        deck:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+        player:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hand'
+        dealer:
+          allOf:
+            - $ref: '#/components/schemas/DealerHand'
+          nullable: true
+        state:
+          type: string
+          enum: [player-turn, dealer-turn, round-over]
+        balance:
+          type: integer

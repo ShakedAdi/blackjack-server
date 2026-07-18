@@ -1,0 +1,9 @@
+export const STARTING_BALANCE = 1000;
+export const BLACKJACK_VALUE = 21;
+export const DEALER_STAND_THRESHOLD = 17;
+export const BLACKJACK_PAYOUT_MULTIPLIER = 2.5;
+export const WIN_PAYOUT_MULTIPLIER = 2;
+export const INITIAL_HAND_SIZE = 2;
+export const ACE_VALUE = 11;
+export const ACE_REDUCTED_VALUE = 10;
+export const FACE_CARD_VALUE = 10;
