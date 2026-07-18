@@ -1,12 +1,12 @@
 import type { BetValidationError, Card, DealerHand, Game, Hand } from "./types.js";
 import { GameState, HandOutcome, HandStatus, Rank, Suit } from "./types.js";
-import { BLACKJACK_PAYOUT_MULTIPLIER, BLACKJACK_VALUE, DEALER_STAND_THRESHOLD, STARTING_BALANCE, WIN_PAYOUT_MULTIPLIER } from "./constants.js";
+import { BLACKJACK_PAYOUT_MULTIPLIER, BLACKJACK_VALUE, DEALER_STAND_THRESHOLD, STARTING_BALANCE, WIN_PAYOUT_MULTIPLIER, ACE_VALUE, FACE_CARD_VALUE, ACE_REDUCTED_VALUE } from "./constants.js";
 
 // returns the card value as a number
 function cardValue(rank: Rank): number {
     if (!isNaN(Number(rank)) && isFinite(Number(rank))) return Number(rank);
-    if (rank === Rank.Ace) return 11;
-    return 10;
+    if (rank === Rank.Ace) return ACE_VALUE;
+    return FACE_CARD_VALUE;
 }
 
 // pops the top card off an array of cards, throwing if none remain
@@ -101,7 +101,7 @@ export function handValue(cards: Card[]): number {
 
     // downgrading aces' values if the total value goes over 21
     for (let i = 0; i < aceCount; i++) {
-        if (value > BLACKJACK_VALUE) value -= 10;
+        if (value > BLACKJACK_VALUE) value -= ACE_REDUCTED_VALUE;
     }
 
     return value;
