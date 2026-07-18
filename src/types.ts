@@ -1,6 +1,27 @@
 export type Suit = "spades" | "hearts" | "diamonds" | "clubs";
 export type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" | "A";
-type HandStatus = "playing" | "stood" | "busted" | "blackjack";
+
+export const HandStatus = {
+    Playing: "playing",
+    Stood: "stood",
+    Busted: "busted",
+    Blackjack: "blackjack",
+} as const;
+export type HandStatus = (typeof HandStatus)[keyof typeof HandStatus];
+
+export const GameState = {
+    PlayerTurn: "player-turn",
+    DealerTurn: "dealer-turn",
+    RoundOver: "round-over"
+} as const;
+export type GameState = (typeof GameState)[keyof typeof GameState];
+
+export const HandOutcome = {
+    Win: "win",
+    Loss: "loss",
+    Push: "push"
+} as const;
+export type HandOutcome = (typeof HandOutcome)[keyof typeof HandOutcome];
 
 export interface Card {
     readonly rank: Rank,
@@ -12,7 +33,7 @@ export interface Hand {
     cards: Card[],
     status: HandStatus,
     bet: number,
-    outcome?: "win" | "loss" | "push"
+    outcome?: HandOutcome
 }
 
 export interface DealerHand {
@@ -25,7 +46,7 @@ export interface Game {
     deck: Card[],
     player: Hand[],
     dealer: DealerHand,
-    state: "player-turn" | "dealer-turn" | "round-over",
+    state: GameState,
     balance: number
 }
 

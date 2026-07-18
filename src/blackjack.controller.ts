@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { BetRequest, Card, Game, Hand } from './types.js';
+import { GameState, HandStatus } from './types.js';
 import { randomUUID } from 'node:crypto';
 import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
 import { getGame, saveGame, getAllGames } from './blackjack.store.js';
@@ -12,7 +13,7 @@ function requireActiveGame(gameId: string, res: Response): Game | undefined {
         res.status(404).json({ error: 'Game not found' });
         return undefined;
     }
-    if (game.state !== "player-turn") {
+    if (game.state !== GameState.PlayerTurn) {
         res.status(409).json({ error: "It is not the player's turn" });
         return undefined;
     }
@@ -40,7 +41,7 @@ export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, 
         res.status(404).json({ error: 'Game not found' });
         return;
     }
-    if (game.state !== "round-over") {
+    if (game.state !== GameState.RoundOver) {
         res.status(409).json({ error: "The round is not over" });
         return;
     }
@@ -62,7 +63,7 @@ export function hit(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = game.player.find(hand => hand.status === "playing");
+    const hand = game.player.find(hand => hand.status === HandStatus.Playing);
     if (!hand) {
         res.status(409).json({ error: "No active hand to hit" });
         return;
@@ -79,13 +80,13 @@ export function stand(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = game.player.find(hand => hand.status === "playing");
+    const hand = game.player.find(hand => hand.status === HandStatus.Playing);
     if (!hand) {
         res.status(409).json({ error: "No active hand" });
         return;
     }
 
-    hand.status = "stood";
+    hand.status = HandStatus.Stood;
     advanceGameState(game);
     res.status(200).json();
 }
@@ -94,7 +95,7 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = game.player.find(h => h.status === "playing" && h.cards.length === INITIAL_HAND_SIZE && h.cards[0]?.rank === h.cards[1]?.rank);
+    const hand = game.player.find(h => h.status === HandStatus.Playing && h.cards.length === INITIAL_HAND_SIZE && h.cards[0]?.rank === h.cards[1]?.rank);
     if (!hand) {
         res.status(409).json({ error: "No active hand to split" });
         return;
@@ -108,7 +109,7 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
 
     game.balance -= hand.bet;
 
-    const newHand: Hand = { cards: [popCard(hand.cards)], status: "playing", bet: hand.bet };
+    const newHand: Hand = { cards: [popCard(hand.cards)], status: HandStatus.Playing, bet: hand.bet };
     hand.cards.push(popCard(game.deck));
     newHand.cards.push(popCard(game.deck));
     hand.status = resolveHandStatus(hand.cards);
@@ -123,7 +124,7 @@ export function double(req: Request<{ gameId: string }>, res: Response): void {
     const game = requireActiveGame(req.params.gameId, res);
     if (!game) return;
 
-    const hand = game.player.find(h => h.status === "playing" && h.cards.length === INITIAL_HAND_SIZE);
+    const hand = game.player.find(h => h.status === HandStatus.Playing && h.cards.length === INITIAL_HAND_SIZE);
     if (!hand) {
         res.status(409).json({ error: "No active hand to double" });
         return;
@@ -140,7 +141,7 @@ export function double(req: Request<{ gameId: string }>, res: Response): void {
 
     const newCard: Card = popCard(game.deck);
     hand.cards.push(newCard);
-    hand.status = handValue(hand.cards) > BLACKJACK_VALUE ? "busted" : "stood";
+    hand.status = handValue(hand.cards) > BLACKJACK_VALUE ? HandStatus.Busted : HandStatus.Stood;
 
     advanceGameState(game);
     res.status(200).json({ newCard, status: hand.status });

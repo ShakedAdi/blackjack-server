@@ -1,4 +1,5 @@
 import type { BetValidationError, Card, DealerHand, Game, Hand, Rank, Suit } from "./types.js";
+import { GameState, HandOutcome, HandStatus } from "./types.js";
 import { BLACKJACK_PAYOUT_MULTIPLIER, BLACKJACK_VALUE, DEALER_STAND_THRESHOLD, STARTING_BALANCE, WIN_PAYOUT_MULTIPLIER } from "./constants.js";
 
 // returns the card value as a number
@@ -54,16 +55,16 @@ export function shuffleDeck(deck: Card[]): Card[] {
 export function initializeRound(game: Game, bet: number): Game {
     game.deck = shuffleDeck(generateDeck());
     
-    game.state = "player-turn";
+    game.state = GameState.PlayerTurn;
     game.balance -= bet;
 
-    const playerHand: Hand = { cards: [popCard(game.deck)], status: "playing", bet }; // handing the player his first card
-    const dealerHand: DealerHand = { cards: [popCard(game.deck)], isHoleCardHidden: true, status: "playing" }; // handing the dealer his first card
+    const playerHand: Hand = { cards: [popCard(game.deck)], status: HandStatus.Playing, bet }; // handing the player his first card
+    const dealerHand: DealerHand = { cards: [popCard(game.deck)], isHoleCardHidden: true, status: HandStatus.Playing }; // handing the dealer his first card
     playerHand.cards.push(popCard(game.deck)); // handing the player his second card
     dealerHand.cards.push(popCard(game.deck)); // handing the dealer his second card
 
-    if (handValue(playerHand.cards) === BLACKJACK_VALUE) playerHand.status = "blackjack"; // checks if the player got a blackjack
-    if (handValue(dealerHand.cards) === BLACKJACK_VALUE) dealerHand.status = "blackjack"; // checks if the dealer got a blackjack
+    if (handValue(playerHand.cards) === BLACKJACK_VALUE) playerHand.status = HandStatus.Blackjack; // checks if the player got a blackjack
+    if (handValue(dealerHand.cards) === BLACKJACK_VALUE) dealerHand.status = HandStatus.Blackjack; // checks if the dealer got a blackjack
 
     game.player = [playerHand];
     game.dealer = dealerHand;
@@ -76,8 +77,8 @@ export function initializeGame(bet: number): Game {
     let game: Game = {
         deck: [],
         player: [],
-        dealer: { cards: [], isHoleCardHidden: true, status: "playing" }, // placeholder, replaced by initializeRound below
-        state: "player-turn",
+        dealer: { cards: [], isHoleCardHidden: true, status: HandStatus.Playing }, // placeholder, replaced by initializeRound below
+        state: GameState.PlayerTurn,
         balance: STARTING_BALANCE
     }
     
@@ -105,11 +106,11 @@ export function handValue(cards: Card[]): number {
 }
 
 // determines a hand's status after a card is dealt during the player's turn
-export function resolveHandStatus(cards: Card[]): "playing" | "stood" | "busted" {
+export function resolveHandStatus(cards: Card[]): typeof HandStatus.Playing | typeof HandStatus.Stood | typeof HandStatus.Busted {
     const value = handValue(cards);
-    if (value > BLACKJACK_VALUE) return "busted";
-    if (value === BLACKJACK_VALUE) return "stood";
-    return "playing";
+    if (value > BLACKJACK_VALUE) return HandStatus.Busted;
+    if (value === BLACKJACK_VALUE) return HandStatus.Stood;
+    return HandStatus.Playing;
 }
 
 // dealer play startegy - hits on anything below 17
@@ -119,8 +120,8 @@ export function dealerPlay(game: Game) {
         game.dealer.cards.push(popCard(game.deck));
     }
 
-    if (game.dealer.status !== "blackjack") {
-        game.dealer.status = handValue(game.dealer.cards) > BLACKJACK_VALUE ? "busted" : "stood";
+    if (game.dealer.status !== HandStatus.Blackjack) {
+        game.dealer.status = handValue(game.dealer.cards) > BLACKJACK_VALUE ? HandStatus.Busted : HandStatus.Stood;
     }
 }
 
@@ -129,41 +130,41 @@ function resolveBets(game: Game): void {
     const dealer = game.dealer;
 
     for (const hand of game.player) {
-        if (dealer.status === "blackjack") {
-            if (hand.status === "blackjack") {
-                hand.outcome = "push";
+        if (dealer.status === HandStatus.Blackjack) {
+            if (hand.status === HandStatus.Blackjack) {
+                hand.outcome = HandOutcome.Push;
                 game.balance += hand.bet;
             } else {
-                hand.outcome = "loss";
+                hand.outcome = HandOutcome.Loss;
             }
             continue;
         }
 
-        if (hand.status === "busted") {
-            hand.outcome = "loss";
-        } else if (hand.status === "blackjack") {
-            hand.outcome = "win";
+        if (hand.status === HandStatus.Busted) {
+            hand.outcome = HandOutcome.Loss;
+        } else if (hand.status === HandStatus.Blackjack) {
+            hand.outcome = HandOutcome.Win;
             game.balance += hand.bet * BLACKJACK_PAYOUT_MULTIPLIER;
-        } else if (dealer.status === "busted" || handValue(hand.cards) > handValue(dealer.cards)) {
-            hand.outcome = "win";
+        } else if (dealer.status === HandStatus.Busted || handValue(hand.cards) > handValue(dealer.cards)) {
+            hand.outcome = HandOutcome.Win;
             game.balance += hand.bet * WIN_PAYOUT_MULTIPLIER;
         } else if (handValue(hand.cards) === handValue(dealer.cards)) {
-            hand.outcome = "push";
+            hand.outcome = HandOutcome.Push;
             game.balance += hand.bet;
         } else {
-            hand.outcome = "loss";
+            hand.outcome = HandOutcome.Loss;
         }
     }
 }
 
 // advances the game state if it should be advanced
 export function advanceGameState(game: Game) {
-    if (game.state === "player-turn" &&
-        (game.dealer.status === "blackjack" || game.player.every(hand => hand.status !== "playing"))) {
-        game.state = "dealer-turn";
+    if (game.state === GameState.PlayerTurn &&
+        (game.dealer.status === HandStatus.Blackjack || game.player.every(hand => hand.status !== HandStatus.Playing))) {
+        game.state = GameState.DealerTurn;
         dealerPlay(game);
         resolveBets(game);
-        game.state = "round-over";        
+        game.state = GameState.RoundOver;        
     }
 }
 
