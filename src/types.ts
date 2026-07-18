@@ -71,12 +71,3 @@ export interface Game {
     state: GameState,
     balance: number
 }
-
-export interface BetRequest {
-    bet: number
-}
-
-export interface BetValidationError {
-    status: 400 | 409,
-    message: string
-}

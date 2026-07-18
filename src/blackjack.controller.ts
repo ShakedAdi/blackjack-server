@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { BetRequest, Card, Game, Hand } from './types.js';
+import type { Card, Game, Hand } from './types.js';
 import { GameState, HandStatus } from './types.js';
 import { randomUUID } from 'node:crypto';
 import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
@@ -20,7 +20,7 @@ function requireActiveGame(gameId: string, res: Response): Game | undefined {
     return game;
 }
 
-export function createGame(req: Request<unknown, unknown, BetRequest>, res: Response): void {
+export function createGame(req: Request<unknown, unknown, { bet: number }>, res: Response): void {
     const { bet } = req.body;
     const error = getBetValidationError(STARTING_BALANCE, bet);
     if (error) {
@@ -35,7 +35,7 @@ export function createGame(req: Request<unknown, unknown, BetRequest>, res: Resp
     res.status(201).json({ gameId, dealersCard: first(game.dealer.cards), playersHand: first(game.player), balance: game.balance });
 }
 
-export function newRound(req: Request<{ gameId: string }, unknown, BetRequest>, res: Response): void {
+export function newRound(req: Request<{ gameId: string }, unknown, { bet: number }>, res: Response): void {
     let game = getGame(req.params.gameId);
     if (!game) {
         res.status(404).json({ error: 'Game not found' });

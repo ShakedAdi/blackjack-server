@@ -1,4 +1,4 @@
-import type { BetValidationError, Card, DealerHand, Game, Hand } from "./types.js";
+import type { Card, DealerHand, Game, Hand } from "./types.js";
 import { GameState, HandOutcome, HandStatus, Rank, Suit } from "./types.js";
 import { BLACKJACK_PAYOUT_MULTIPLIER, BLACKJACK_VALUE, DEALER_STAND_THRESHOLD, STARTING_BALANCE, WIN_PAYOUT_MULTIPLIER, ACE_VALUE, FACE_CARD_VALUE, ACE_REDUCTED_VALUE } from "./constants.js";
 
@@ -171,7 +171,7 @@ export function advanceGameState(game: Game) {
 }
 
 // returns an error describing why the bet is invalid, otherwise undefined
-export function getBetValidationError(balance: number, bet: number): BetValidationError | undefined {
+export function getBetValidationError(balance: number, bet: number) {
     if (!Number.isFinite(bet) || bet <= 0) return { status: 400, message: "Bet must be a positive number" };
     if (bet > balance) return { status: 409, message: "Insufficient balance for this bet" };
     return undefined;
