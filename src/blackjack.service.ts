@@ -58,13 +58,15 @@ export function initializeRound(game: Game, bet: number): Game {
     game.state = GameState.PlayerTurn;
     game.balance -= bet;
 
-    const playerHand: Hand = { cards: [popCard(game.deck)], status: HandStatus.Playing, bet }; // handing the player his first card
-    const dealerHand: DealerHand = { cards: [popCard(game.deck)], isHoleCardHidden: true, status: HandStatus.Playing }; // handing the dealer his first card
-    playerHand.cards.push(popCard(game.deck)); // handing the player his second card
-    dealerHand.cards.push(popCard(game.deck)); // handing the dealer his second card
+    // handing the player a card, then the dealer a card, then again to the player, then again to the dealer
+    const playerHand: Hand = { cards: [popCard(game.deck)], status: HandStatus.Playing, bet };
+    const dealerHand: DealerHand = { cards: [popCard(game.deck)], isHoleCardHidden: true, status: HandStatus.Playing };
+    playerHand.cards.push(popCard(game.deck));
+    dealerHand.cards.push(popCard(game.deck));
 
-    if (handValue(playerHand.cards) === BLACKJACK_VALUE) playerHand.status = HandStatus.Blackjack; // checks if the player got a blackjack
-    if (handValue(dealerHand.cards) === BLACKJACK_VALUE) dealerHand.status = HandStatus.Blackjack; // checks if the dealer got a blackjack
+    // check if the player or the dealer got a black jack and update the hand status
+    if (handValue(playerHand.cards) === BLACKJACK_VALUE) playerHand.status = HandStatus.Blackjack;
+    if (handValue(dealerHand.cards) === BLACKJACK_VALUE) dealerHand.status = HandStatus.Blackjack;
 
     game.player = [playerHand];
     game.dealer = dealerHand;
