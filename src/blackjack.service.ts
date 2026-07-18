@@ -1,11 +1,11 @@
-import type { BetValidationError, Card, DealerHand, Game, Hand, Rank, Suit } from "./types.js";
-import { GameState, HandOutcome, HandStatus } from "./types.js";
+import type { BetValidationError, Card, DealerHand, Game, Hand } from "./types.js";
+import { GameState, HandOutcome, HandStatus, Rank, Suit } from "./types.js";
 import { BLACKJACK_PAYOUT_MULTIPLIER, BLACKJACK_VALUE, DEALER_STAND_THRESHOLD, STARTING_BALANCE, WIN_PAYOUT_MULTIPLIER } from "./constants.js";
 
 // returns the card value as a number
 function cardValue(rank: Rank): number {
     if (!isNaN(Number(rank)) && isFinite(Number(rank))) return Number(rank);
-    if (rank === "A") return 11;
+    if (rank === Rank.Ace) return 11;
     return 10;
 }
 
@@ -26,8 +26,8 @@ export function first<T>(items: T[]): T {
 // generates an unshuffled deck containing all 52 cards
 export function generateDeck(): Card[] {
     let cards: Card[] = [];
-    const ranks: Rank[] = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
-    const suits: Suit[] = ["clubs", "diamonds", "hearts", "spades"];
+    const ranks = Object.values(Rank);
+    const suits = Object.values(Suit);
 
     ranks.forEach(rank => {
         const value: number = cardValue(rank);
@@ -95,7 +95,7 @@ export function handValue(cards: Card[]): number {
 
     // accumulating all the crads' values
     cards.forEach(card => {
-        if (card.rank === "A") aceCount++;
+        if (card.rank === Rank.Ace) aceCount++;
         value += card.value;
     });
 

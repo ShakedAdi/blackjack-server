@@ -1,5 +1,27 @@
-export type Suit = "spades" | "hearts" | "diamonds" | "clubs";
-export type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" | "A";
+export const Suit = {
+    Spades: "spades",
+    Hearts: "hearts",
+    Diamonds: "diamonds",
+    Clubs: "clubs",
+} as const;
+export type Suit = (typeof Suit)[keyof typeof Suit];
+
+export const Rank = {
+    Two: "2",
+    Three: "3",
+    Four: "4",
+    Five: "5",
+    Six: "6",
+    Seven: "7",
+    Eight: "8",
+    Nine: "9",
+    Ten: "10",
+    Jack: "J",
+    Queen: "Q",
+    King: "K",
+    Ace: "A",
+} as const;
+export type Rank = (typeof Rank)[keyof typeof Rank];
 
 export const HandStatus = {
     Playing: "playing",
