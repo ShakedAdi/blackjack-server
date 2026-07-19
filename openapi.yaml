@@ -216,10 +216,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  firstHand:
-                    $ref: '#/components/schemas/Hand'
-                  secondHand:
-                    $ref: '#/components/schemas/Hand'
+                  firstHandCards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+                  secondHandCards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
         '404':
           description: Game not found
           content:

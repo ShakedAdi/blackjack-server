@@ -117,7 +117,7 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
     game.player.push(newHand);
 
     advanceGameState(game);
-    res.status(200).json({ firstHand: hand, secondHand: newHand });
+    res.status(200).json({ firstHandCards: hand.cards, secondHandCards: newHand.cards});
 }
 
 export function double(req: Request<{ gameId: string }>, res: Response): void {
