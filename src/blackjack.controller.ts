@@ -117,7 +117,9 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
     game.player.push(newHand);
 
     advanceGameState(game);
-    res.status(200).json({ firstHandCards: hand.cards, secondHandCards: newHand.cards});
+    const firstHandCards = hand.cards.map(card => ({rank: card.rank, suit: card.suit}));
+    const secondHandCards = newHand.cards.map(card => ({rank: card.rank, suit: card.suit}));
+    res.status(200).json({ firstHandCards, firstHandStatus: hand.status, secondHandCards, secondHandStatus: newHand.status});
 }
 
 export function double(req: Request<{ gameId: string }>, res: Response): void {
