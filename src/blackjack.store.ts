@@ -1,15 +1,15 @@
-import type { Game } from "./types.js";
+import type { Game } from './types.js';
 
 const games = new Map<string, Game>();
 
 export function saveGame(gameId: string, game: Game): void {
-    games.set(gameId, game);
+  games.set(gameId, game);
 }
 
 export function getGame(gameId: string): Game | undefined {
-    return games.get(gameId);
+  return games.get(gameId);
 }
 
 export function removeGame(gameId: string): void {
-    games.delete(gameId);
+  games.delete(gameId);
 }
