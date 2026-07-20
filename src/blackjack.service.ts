@@ -162,7 +162,7 @@ function resolveBets(game: Game): void {
 // advances the game state if it should be advanced
 export function advanceGameState(game: Game) {
     if (game.state === GameState.PlayerTurn &&
-        (game.dealer.status === HandStatus.Blackjack || game.player.every(hand => hand.status !== HandStatus.Playing))) {
+        game.player.every(hand => hand.status !== HandStatus.Playing)) {
         game.state = GameState.DealerTurn;
         dealerPlay(game);
         resolveBets(game);
