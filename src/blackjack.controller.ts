@@ -3,7 +3,7 @@ import type { Card, Game, Hand } from './types.js';
 import { GameState, HandStatus } from './types.js';
 import { randomUUID } from 'node:crypto';
 import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
-import { getGame, saveGame, getAllGames } from './blackjack.store.js';
+import { getGame, saveGame } from './blackjack.store.js';
 import { BLACKJACK_VALUE, INITIAL_HAND_SIZE, STARTING_BALANCE } from './constants.js';
 
 // fetches a game and ensures it's the player's turn, writing the appropriate error response otherwise
@@ -157,8 +157,4 @@ export function getGameState(req: Request<{ gameId: string }>, res: Response): v
     }
     const dealer: Card[] = game.dealer.isHoleCardHidden ? [first(game.dealer.cards)] : game.dealer.cards;
     res.status(200).json({ state: game.state, isHoleCardHidden: game.dealer.isHoleCardHidden, player: game.player, dealer, balance: game.balance });
-}
-
-export function listAllGames(req: Request, res: Response): void {
-    res.status(200).json(getAllGames());
 }

@@ -9,7 +9,3 @@ export function saveGame(gameId: string, game: Game): void {
 export function getGame(gameId: string): Game | undefined {
     return games.get(gameId);
 }
-
-export function getAllGames(): Record<string, Game> {
-    return Object.fromEntries(games);
-}
