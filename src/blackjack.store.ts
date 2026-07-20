@@ -9,3 +9,7 @@ export function saveGame(gameId: string, game: Game): void {
 export function getGame(gameId: string): Game | undefined {
     return games.get(gameId);
 }
+
+export function removeGame(gameId: string): void {
+    games.delete(gameId);
+}
