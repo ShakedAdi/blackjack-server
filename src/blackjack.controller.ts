@@ -3,7 +3,7 @@ import type { Card, Game, Hand } from './types.js';
 import { GameState, HandStatus } from './types.js';
 import { randomUUID } from 'node:crypto';
 import { advanceGameState, first, getBetValidationError, handValue, initializeGame, initializeRound, popCard, resolveHandStatus } from './blackjack.service.js';
-import { getGame, saveGame, getAllGames } from './blackjack.store.js';
+import { getGame, saveGame, removeGame } from './blackjack.store.js';
 import { BLACKJACK_VALUE, INITIAL_HAND_SIZE, STARTING_BALANCE } from './constants.js';
 
 // fetches a game and ensures it's the player's turn, writing the appropriate error response otherwise
@@ -117,7 +117,9 @@ export function split(req: Request<{ gameId: string }>, res: Response): void {
     game.player.push(newHand);
 
     advanceGameState(game);
-    res.status(200).json({ firstHand: hand, secondHand: newHand });
+    const firstHandCards = hand.cards.map(card => ({rank: card.rank, suit: card.suit}));
+    const secondHandCards = newHand.cards.map(card => ({rank: card.rank, suit: card.suit}));
+    res.status(200).json({ firstHandCards, firstHandStatus: hand.status, secondHandCards, secondHandStatus: newHand.status});
 }
 
 export function double(req: Request<{ gameId: string }>, res: Response): void {
@@ -157,6 +159,11 @@ export function getGameState(req: Request<{ gameId: string }>, res: Response): v
     res.status(200).json({ state: game.state, isHoleCardHidden: game.dealer.isHoleCardHidden, player: game.player, dealer, balance: game.balance });
 }
 
-export function listAllGames(req: Request, res: Response): void {
-    res.status(200).json(getAllGames());
+export function deleteGame(req: Request<{ gameId: string }>, res: Response): void {
+    const game = getGame(req.params.gameId);
+    if (!game) {
+        res.status(404).json({ error: 'Game not found' });
+        return;
+    }
+    res.status(200).json(removeGame(req.params.gameId));
 }

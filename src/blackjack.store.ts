@@ -10,6 +10,6 @@ export function getGame(gameId: string): Game | undefined {
     return games.get(gameId);
 }
 
-export function getAllGames(): Record<string, Game> {
-    return Object.fromEntries(games);
+export function removeGame(gameId: string): void {
+    games.delete(gameId);
 }
